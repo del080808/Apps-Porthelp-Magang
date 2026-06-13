@@ -10,7 +10,7 @@ import 'profil_fitur/admin_panduan_page.dart';
 import 'profil_fitur/admin_pengaturan_page.dart';
 
 class AdminProfilPage extends StatelessWidget {
-  final User user;
+  final UserModel user;
   const AdminProfilPage({super.key, required this.user});
 
   @override
@@ -126,11 +126,11 @@ class AdminProfilPage extends StatelessWidget {
             const Divider(height: 20),
             _infoRow(Icons.person_outline, 'Nama', user.name),
             _infoRow(Icons.email_outlined, 'Email', user.email),
-            _infoRow(Icons.phone_outlined, 'Telepon', user.phone),
+            _infoRow(Icons.phone_outlined, 'Telepon', user.phone ?? '-'),
             _infoRow(
               Icons.business_outlined,
               'Organisasi',
-              user.company ?? 'PortHelp IT Support',
+              user.department ?? 'PortHelp IT Support',
             ),
             _infoRow(Icons.shield_outlined, 'Role', 'Admin Sistem'),
           ],

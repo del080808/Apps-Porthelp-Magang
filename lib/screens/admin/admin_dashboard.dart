@@ -18,7 +18,7 @@ class _AppColors {
 
 // ==================== DASHBOARD SHELL ====================
 class AdminDashboard extends StatefulWidget {
-  final User user;
+  final UserModel user;
   const AdminDashboard({super.key, required this.user});
 
   @override
@@ -48,7 +48,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
         decoration: BoxDecoration(
           color: Colors.white,
           boxShadow: [
-            BoxShadow(blurRadius: 15, color: Colors.black.withOpacity(0.05)),
+            BoxShadow(blurRadius: 15, color: Colors.black.withValues(alpha:0.05)),
           ],
         ),
         child: BottomNavigationBar(
@@ -96,7 +96,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
 // ==================== HOME PAGE ====================
 class _HomePage extends StatefulWidget {
-  final User user;
+  final UserModel user;
   final void Function(int) onNavigate;
 
   const _HomePage({required this.user, required this.onNavigate});
@@ -165,7 +165,7 @@ class _HomePageState extends State<_HomePage> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(

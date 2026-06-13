@@ -31,24 +31,23 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
 
+  // ✅ PERBAIKAN: role code disesuaikan dengan backend Laravel
   final Map<String, Map<String, dynamic>> _roles = {
     'User (Pelapor)': {
-      'code': 'user',
+      'code': 'pelapor',           // ✅ was: 'user'
       'icon': Icons.person_outline_rounded,
       'color': const Color(0xFF2751A3),
       'bgColor': const Color(0xFFEFF3FB),
       'checkColor': const Color(0xFF2751A3),
       'description': 'Buat & lacak tiket support Anda',
-      'email': 'budi@example.com',
     },
     'Technician (Teknisi)': {
-      'code': 'technician',
+      'code': 'teknisi',           // ✅ was: 'technician'
       'icon': Icons.build_outlined,
       'color': const Color(0xFFF59E0B),
       'bgColor': const Color(0xFFFFF8E7),
       'checkColor': const Color(0xFFF59E0B),
       'description': 'Terima & kerjakan tiket support',
-      'email': 'andi@porthelp.com',
     },
     'Admin': {
       'code': 'admin',
@@ -57,7 +56,6 @@ class _LoginScreenState extends State<LoginScreen> {
       'bgColor': const Color(0xFFF3F0FF),
       'checkColor': const Color(0xFF7C3AED),
       'description': 'Kelola sistem & assign teknisi',
-      'email': 'admin@porthelp.com',
     },
   };
 
@@ -78,80 +76,87 @@ class _LoginScreenState extends State<LoginScreen> {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
     final selectedRoleData = _roles[_selectedRole];
-    final expectedEmail = selectedRoleData?['email']?.toString().trim();
+    final roleCode = selectedRoleData?['code']?.toString() ?? '';
 
+    // Validasi input
     if (email.isEmpty) {
       _showSnackBar('Email tidak boleh kosong');
-      return;
-    }
-    if (password.isEmpty) {
-      _showSnackBar('Password tidak boleh kosong');
-      return;
-    }
-    if (password.length < 8) {
-      _showSnackBar('Password minimal 8 karakter');
       return;
     }
     if (!email.contains('@') || !email.contains('.')) {
       _showSnackBar('Email tidak valid');
       return;
     }
-
-    if (expectedEmail == null || expectedEmail.isEmpty) {
-      _showSnackBar('Role yang dipilih tidak memiliki email referensi');
+    if (password.isEmpty) {
+      _showSnackBar('Password tidak boleh kosong');
       return;
     }
-
-    if (email.toLowerCase() != expectedEmail.toLowerCase()) {
-      _showSnackBar(
-        'Email tidak sesuai dengan role $_selectedRole. Gunakan email: $expectedEmail',
-      );
+    if (password.length < 6) {
+      _showSnackBar('Password minimal 6 karakter');
       return;
     }
 
     setState(() => _isLoading = true);
 
     try {
-      await Future.delayed(const Duration(seconds: 1));
-
-      final user = await AuthService.login(email, password);
+      // ✅ PERBAIKAN: kirim email, password, role ke API
+      final result = await AuthService.login(email, password, roleCode);
 
       if (!mounted) return;
       setState(() => _isLoading = false);
 
-      if (user != null) {
-        if (user.role == UserRole.admin) {
-          _showSnackBar('✅ Login berhasil sebagai Admin!', isError: false);
-          if (!mounted) return;
+      final status = result['status'];
+      final data = result['data'];
+
+      if (status == 200) {
+        final user = UserModel.fromJson(data['user']);
+
+        _showSnackBar(
+          '✅ Login berhasil sebagai ${user.name}!',
+          isError: false,
+        );
+
+        if (!mounted) return;
+
+        // Navigate berdasarkan role
+        if (user.role == 'admin') {
           Navigator.pushReplacement(
             context,
-            // FIX: tambahkan parameter user yang dibutuhkan
             MaterialPageRoute(builder: (_) => AdminDashboard(user: user)),
           );
-        } else if (user.role == UserRole.teknisi) {
-          _showSnackBar('✅ Login berhasil sebagai Teknisi!', isError: false);
-          if (!mounted) return;
+        } else if (user.role == 'teknisi') {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => TeknisiDashboard(user: user)),
           );
-        } else if (user.role == UserRole.pelapor) {
-          _showSnackBar('✅ Login berhasil sebagai Pelapor!', isError: false);
-          if (!mounted) return;
+        } else if (user.role == 'pelapor') {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (_) => PelaporDashboard(user: user)),
           );
         } else {
-          _showSnackBar('Role tidak dikenali');
+          _showSnackBar('Role tidak dikenali: ${user.role}');
         }
-      } else {
+      } else if (status == 401) {
         _showSnackBar('Email atau password salah');
+      } else if (status == 403) {
+        _showSnackBar('Role tidak sesuai dengan akun ini');
+      } else if (status == 422) {
+        _showSnackBar('Data yang dimasukkan tidak valid');
+      } else {
+        _showSnackBar(data['message'] ?? 'Terjadi kesalahan, coba lagi');
       }
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      _showSnackBar(e.toString());
+
+      // ✅ PERBAIKAN: pesan error lebih informatif
+      if (e.toString().contains('SocketException') ||
+          e.toString().contains('Connection refused')) {
+        _showSnackBar('Tidak dapat terhubung ke server. Pastikan server Laravel berjalan.');
+      } else {
+        _showSnackBar('Error: ${e.toString()}');
+      }
     }
   }
 
@@ -165,13 +170,6 @@ class _LoginScreenState extends State<LoginScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
-  }
-
-  void _autoFillEmail() {
-    final selectedRoleData = _roles[_selectedRole];
-    if (selectedRoleData != null && selectedRoleData['email'] != null) {
-      _emailController.text = selectedRoleData['email'];
-    }
   }
 
   @override
@@ -453,6 +451,7 @@ class _LoginScreenState extends State<LoginScreen> {
       controller: controller,
       obscureText: obscure,
       keyboardType: keyboardType,
+      onChanged: (_) => setState(() {}), // ✅ trigger rebuild untuk validasi
       style: const TextStyle(
         fontSize: 15,
         color: _C.textPri,
@@ -500,10 +499,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: GestureDetector(
-        onTap: () {
-          setState(() => _selectedRole = role);
-          _autoFillEmail();
-        },
+        onTap: () => setState(() => _selectedRole = role),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           curve: Curves.easeInOut,
@@ -594,7 +590,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 ),
-          color: (_isLoading || !_isFormValid) ? const Color(0xFFCDD4E4) : null,
+          color:
+              (_isLoading || !_isFormValid) ? const Color(0xFFCDD4E4) : null,
           borderRadius: BorderRadius.circular(16),
           boxShadow: (_isLoading || !_isFormValid)
               ? []

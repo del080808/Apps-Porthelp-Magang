@@ -8,7 +8,7 @@ import '../../services/data_service.dart';
 import '../auth/login_screen.dart';
 
 class TeknisiProfilPage extends StatefulWidget {
-  final User user;
+  final UserModel user;
 
   const TeknisiProfilPage({super.key, required this.user});
 
@@ -33,7 +33,7 @@ class _TeknisiProfilPageState extends State<TeknisiProfilPage> {
     _emailController = TextEditingController(text: widget.user.email);
     _phoneController = TextEditingController(text: widget.user.phone);
     _specializationController = TextEditingController(
-      text: widget.user.specialization ?? '-',
+      text: widget.user.department ?? '-',
     );
   }
 

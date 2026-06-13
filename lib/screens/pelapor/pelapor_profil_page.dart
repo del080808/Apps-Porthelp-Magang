@@ -6,7 +6,7 @@ import '../../services/auth_service.dart';
 import '../auth/login_screen.dart';
 
 class PelaporProfilPage extends StatefulWidget {
-  final User user;
+  final UserModel user;
 
   const PelaporProfilPage({super.key, required this.user});
 
@@ -31,7 +31,7 @@ class _PelaporProfilPageState extends State<PelaporProfilPage> {
     _emailController = TextEditingController(text: widget.user.email);
     _phoneController = TextEditingController(text: widget.user.phone);
     _companyController = TextEditingController(
-      text: widget.user.company ?? '-',
+      text: widget.user.department ?? '-',
     );
   }
 

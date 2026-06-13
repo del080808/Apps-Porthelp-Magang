@@ -10,7 +10,7 @@ import '../buat_tiket_page.dart';
 import '../widgets/pelapor_ticket_card.dart';
 
 class PelaporDashboard extends StatefulWidget {
-  final User user;
+  final UserModel user;
 
   const PelaporDashboard({super.key, required this.user});
 

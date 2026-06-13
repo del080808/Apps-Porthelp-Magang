@@ -24,7 +24,7 @@ class _AppColors {
 
 // ==================== DASHBOARD SHELL ====================
 class TeknisiDashboard extends StatefulWidget {
-  final User user;
+  final UserModel user;
 
   const TeknisiDashboard({super.key, required this.user});
 
